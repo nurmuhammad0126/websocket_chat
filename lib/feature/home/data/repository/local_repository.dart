@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/message_model.dart';
 
@@ -16,6 +18,12 @@ class LocalRepository {
   Future<void> addMessage(Message message) async {
     final box = await _openBox();
     await box.add(message.toJson());
+    log(box.values
+        .map(
+          (e) => e,
+        )
+        .toList()
+        .toString());
   }
 
   Future<void> clearMessages() async {

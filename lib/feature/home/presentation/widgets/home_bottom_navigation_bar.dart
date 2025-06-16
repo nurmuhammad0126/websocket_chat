@@ -1,6 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:websocket_home_work/core/extension/widget_extension.dart';
 
 import '../../data/models/message_model.dart';
 import '../blocs/bloc/chat_bloc.dart';
@@ -32,6 +37,21 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
     super.dispose();
   }
 
+  Future<String?> uploadImage(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    final pickImage = await picker.pickImage(
+      source: source,
+      imageQuality: 25,
+    );
+
+    if (pickImage == null) return null;
+
+    final bytes = await File(pickImage.path).readAsBytes();
+    final base64Image = base64Encode(bytes);
+
+    return base64Image;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -44,7 +64,28 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
         child: Row(
           spacing: 15,
           children: [
-            Icon(Icons.add),
+            IconButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    content: Row(
+                      children: [
+                        MyElevatedButton(
+                          title: 'GALERIYA',
+                          source: ImageSource.gallery,
+                        ),
+                        MyElevatedButton(
+                          title: 'KAMERA',
+                          source: ImageSource.camera,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              icon: Icon(Icons.add),
+            ),
             Expanded(
               child: SizedBox(
                 height: 42,
@@ -61,13 +102,10 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
                       vertical: 10,
                       horizontal: 14,
                     ),
-                    suffixIcon: Padding(
-                      padding: const EdgeInsets.only(
-                        top: 10,
-                        bottom: 10,
-                        right: 12,
-                      ),
-                      child: Icon(Icons.sticky_note_2_sharp),
+                    suffixIcon: Icon(Icons.sticky_note_2_sharp).paddingOnly(
+                      top: 10,
+                      bottom: 10,
+                      right: 12,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -92,6 +130,7 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
                                     message: messageController.text.trim(),
                                     name: "Nurmuhammad",
                                     time: DateTime.now().toIso8601String(),
+                                    type: MessageType.text,
                                   ),
                                 ),
                               );
@@ -116,6 +155,52 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class MyElevatedButton extends StatelessWidget {
+  final String title;
+  final ImageSource source;
+
+  const MyElevatedButton({
+    super.key,
+    required this.title,
+    required this.source,
+  });
+
+  Future<String?> uploadImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickImage = await picker.pickImage(
+      source: source,
+      imageQuality: 25,
+    );
+    if (pickImage == null) return null;
+    final bytes = await File(pickImage.path).readAsBytes();
+    return base64Encode(bytes);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () async {
+        final image = await uploadImage(source);
+        if (image == null) return;
+        if (context.mounted) {
+          context.read<ChatBloc>().add(
+                ChatEvent.sentData(
+                  Message(
+                    message: image,
+                    name: "Nurmuhammad",
+                    time: DateTime.now().toIso8601String(),
+                    type: MessageType.image,
+                  ),
+                ),
+              );
+          Navigator.pop(context);
+        }
+      },
+      child: Text(title),
     );
   }
 }

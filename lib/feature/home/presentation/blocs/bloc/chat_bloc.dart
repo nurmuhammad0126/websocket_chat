@@ -30,12 +30,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     WebsocketService.getInstance(
       "wss://s14778.nyc1.piesocket.com/v3/1?api_key=wusJd4jrt5BxKanrbwjDbBaf888jFjfctDXzntMN&notify_self=1",
     );
- 
+
     WebsocketService.channel.stream.listen(
       (event) {
         if (event is String && event.isNotEmpty) {
           try {
             final message = Message.fromJson(jsonDecode(event));
+
             add(ChatEvent.addData(message));
           } catch (e) {
             print("Xatolik WebSocket parsingda: $e");
@@ -44,9 +45,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       },
       onError: (error) {
         emit(ChatState.failure("WebSocket xatosi: $error"));
+        WebsocketService.getInstance(
+          "wss://s14778.nyc1.piesocket.com/v3/1?api_key=wusJd4jrt5BxKanrbwjDbBaf888jFjfctDXzntMN&notify_self=1",
+        );
       },
       onDone: () {
         emit(const ChatState.failure("WebSocket ulanmasi yopildi"));
+        WebsocketService.getInstance(
+          "wss://s14778.nyc1.piesocket.com/v3/1?api_key=wusJd4jrt5BxKanrbwjDbBaf888jFjfctDXzntMN&notify_self=1",
+        );
       },
       cancelOnError: true,
     );
